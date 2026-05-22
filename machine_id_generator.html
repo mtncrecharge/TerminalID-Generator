@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Machine ID Generator</title>
+<style>
+:root{
+  --bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:rgba(96,165,250,0.15);
+  --primary:#60a5fa;--accent:#34d399;--red:#f87171;--yellow:#fbbf24;
+  --text:#f1f5f9;--muted:rgba(241,245,249,0.5);
+  --font:'Courier New',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;
+  background-image:radial-gradient(ellipse at 20% 20%, rgba(96,165,250,0.05) 0%, transparent 50%),
+  radial-gradient(ellipse at 80% 80%, rgba(52,211,153,0.05) 0%, transparent 50%)}
+
+.header{background:var(--surface);border-bottom:1px solid var(--border);
+  padding:14px 16px;display:flex;align-items:center;gap:10px}
+.header-icon{font-size:20px}
+.header-title{font-size:15px;font-weight:700;letter-spacing:1px;color:var(--primary)}
+.header-sub{font-size:9px;color:var(--muted);margin-top:2px;letter-spacing:2px;text-transform:uppercase}
+
+.container{padding:12px;max-width:480px;margin:0 auto}
+
+/* Section cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:14px;margin-bottom:12px}
+.card-title{font-size:10px;color:var(--primary);letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.card-title::before{content:'';width:3px;height:14px;background:var(--primary);border-radius:2px;display:block}
+
+/* Input rows */
+.input-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.input-label{font-size:11px;color:var(--muted);width:90px;flex-shrink:0;letter-spacing:.5px}
+.input-field{flex:1;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--font);
+  font-size:13px;outline:none;transition:border-color .2s}
+.input-field:focus{border-color:var(--primary)}
+.input-badge{font-size:9px;color:var(--accent);background:rgba(52,211,153,0.1);
+  border:1px solid rgba(52,211,153,0.2);padding:2px 7px;border-radius:20px;
+  white-space:nowrap;letter-spacing:.5px}
+
+/* Radio */
+.radio-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.radio-label{font-size:11px;color:var(--muted);width:90px;flex-shrink:0}
+.radio-group{display:flex;gap:12px}
+.radio-item{display:flex;align-items:center;gap:5px;cursor:pointer}
+.radio-item input{accent-color:var(--primary);width:14px;height:14px}
+.radio-item span{font-size:12px;color:var(--text)}
+
+/* Generated ID display */
+.id-preview{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  padding:10px 12px;margin-top:10px;font-size:16px;font-weight:700;
+  letter-spacing:3px;color:var(--accent);text-align:center;min-height:42px;
+  display:flex;align-items:center;justify-content:center}
+.id-parts{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap}
+.id-part{background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);
+  border-radius:4px;padding:2px 6px;font-size:13px;color:var(--primary)}
+.id-separator{color:var(--muted);font-size:10px}
+
+/* Buttons */
+.btn{width:100%;padding:12px;border:none;border-radius:10px;font-family:var(--font);
+  font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:all .2s;
+  margin-bottom:8px}
+.btn-primary{background:var(--primary);color:#000}
+.btn-primary:active{opacity:.8}
+.btn-success{background:var(--accent);color:#000}
+.btn-success:active{opacity:.8}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:active{opacity:.8}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* ID List */
+.id-list{max-height:200px;overflow-y:auto;margin-top:8px}
+.id-item{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 10px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;margin-bottom:6px;font-size:12px}
+.id-item-id{color:var(--accent);font-weight:700;letter-spacing:1px}
+.id-item-date{color:var(--muted);font-size:10px}
+.id-count{font-size:10px;color:var(--muted);margin-bottom:6px;text-align:right}
+.empty-state{text-align:center;color:var(--muted);font-size:11px;padding:20px 0}
+
+/* Rules diagram */
+.rules{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px}
+.rules-title{font-size:10px;color:var(--yellow);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.rules-code{font-size:11px;color:var(--primary);letter-spacing:4px;margin-bottom:4px;font-weight:700}
+.rules-row{display:flex;gap:8px;margin-bottom:4px;align-items:flex-start}
+.rules-dot{width:6px;height:6px;border-radius:50%;background:var(--primary);margin-top:4px;flex-shrink:0}
+.rules-text{font-size:10px;color:var(--muted);line-height:1.5}
+.rules-text b{color:var(--text)}
+
+/* Status bar */
+.status{font-size:10px;padding:6px 10px;border-radius:6px;margin-top:8px;text-align:center}
+.status-ok{background:rgba(52,211,153,0.1);color:var(--accent);border:1px solid rgba(52,211,153,0.2)}
+.status-err{background:rgba(248,113,113,0.1);color:var(--red);border:1px solid rgba(248,113,113,0.2)}
+.status-info{background:rgba(96,165,250,0.1);color:var(--primary);border:1px solid rgba(96,165,250,0.15)}
+
+/* Read section */
+.read-content{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  padding:10px;margin-top:8px;min-height:60px}
+.read-id{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:3px;text-align:center;padding:8px 0}
+.read-date{font-size:11px;color:var(--muted);text-align:center;margin-top:2px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">⚡</div>
+  <div>
+    <div class="header-title">MACHINE ID GENERATOR</div>
+    <div class="header-sub">Terminal Machine ID — V1.9.1</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Input Section -->
+  <div class="card">
+    <div class="card-title">Write ID — Input Parameters</div>
+
+    <div class="input-row">
+      <div class="input-label">App. Range</div>
+      <input id="inRange" class="input-field" value="00" maxlength="2" oninput="updatePreview()">
+      <span class="input-badge">Fixed 2-digit</span>
+    </div>
+
+    <div class="input-row">
+      <div class="input-label">Origin</div>
+      <input id="inOrigin" class="input-field" value="00" maxlength="2" oninput="updatePreview()">
+      <span class="input-badge">Fixed 2-digit</span>
+    </div>
+
+    <div class="input-row">
+      <div class="input-label">Product Series</div>
+      <input id="inSeries" class="input-field" value="120" maxlength="3" oninput="updatePreview()">
+      <span class="input-badge">Fixed 3-digit</span>
+    </div>
+
+    <div class="input-row">
+      <div class="input-label">Serial No.</div>
+      <input id="inSerial" class="input-field" value="1" oninput="updatePreview()">
+    </div>
+
+    <div class="radio-row">
+      <div class="radio-label">Serial No.长度</div>
+      <div class="radio-group">
+        <label class="radio-item">
+          <input type="radio" name="serialLen" value="5" onchange="updatePreview()"> <span>5-digit</span>
+        </label>
+        <label class="radio-item">
+          <input type="radio" name="serialLen" value="7" checked onchange="updatePreview()"> <span>7-digit</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="id-preview" id="idPreview">
+      <div class="id-parts" id="idParts">—</div>
+    </div>
+  </div>
+
+  <!-- Generate & Write -->
+  <div class="card">
+    <div class="card-title">Actions</div>
+    <button class="btn btn-primary" onclick="generateID()">⚡ Generate ID</button>
+    <div class="btn-row">
+      <button class="btn btn-success" id="btnWrite" onclick="writeIDs()" disabled>💾 Save .bin File</button>
+      <button class="btn btn-danger" id="btnClear" onclick="clearList()" disabled>🗑 Clear List</button>
+    </div>
+    <div id="statusMsg"></div>
+  </div>
+
+  <!-- Generated List -->
+  <div class="card">
+    <div class="card-title">Generated ID List</div>
+    <div class="id-count" id="idCount">0 ID</div>
+    <div class="id-list" id="idList">
+      <div class="empty-state">No IDs generated yet</div>
+    </div>
+  </div>
+
+  <!-- Read Section -->
+  <div class="card">
+    <div class="card-title">Read ID Info</div>
+    <button class="btn btn-primary" onclick="readBin()">📂 Read .bin File</button>
+    <input type="file" id="fileInput" accept=".bin" style="display:none" onchange="handleFileRead(event)">
+    <div class="read-content" id="readContent">
+      <div class="empty-state">Select a .bin file to read ID</div>
+    </div>
+  </div>
+
+  <!-- Rules -->
+  <div class="card">
+    <div class="card-title">Machine Encoding Rules</div>
+    <div class="rules">
+      <div class="rules-title">ID Structure Format</div>
+      <div class="rules-code">XX · XX · XXX · XXXXX → 12-digit</div>
+      <div class="rules-code">XX · XX · XXX · XXXXXXX → 14-digit</div>
+      <div style="height:8px"></div>
+      <div class="rules-row"><div class="rules-dot"></div><div class="rules-text"><b>XX</b> — App. Range (2 digit), default "00" = China standard</div></div>
+      <div class="rules-row"><div class="rules-dot"></div><div class="rules-text"><b>XX</b> — Origin (2 digit), default "00" = Guangzhou</div></div>
+      <div class="rules-row"><div class="rules-dot"></div><div class="rules-text"><b>XXX</b> — Product Series (3 digit), e.g. "080"=8-port, "010"=1-port</div></div>
+      <div class="rules-row"><div class="rules-dot"></div><div class="rules-text"><b>XXXXX/XXXXXXX</b> — Serial No. (5 or 7 digit), max 10 million units</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── XOR key for .bin encryption ──
+const XOR_KEY = 0x1a;
+
+// ── File header and footer (from reverse engineering original file) ──
+const HEADER_RAW = [0xb1,0x30,0x13,0x8b,0xd6,0xba,0x4c,0x53,0x35,0x9c,0x3b,0x16,0xe5,0x6c,0xac,0x22,
+  0x09,0xe5,0x2a,0x7c,0x0b,0x9b,0xa5,0x47,0x09,0xf5,0xc9,0x00,0x74,0x4f,0x66,0x11,
+  0x2a,0x00,0x00,0x00,0x1a,0x14,0x1a,0x1a];
+const SEPARATOR_RAW = [0x34,0x13,0x00,0x00,0x00];
+const FOOTER_RAW = [0x4e,0x61,0x9b,0xa4,0xd6,0xb1,0xf6,0xaa,0x57,0x72,0x1d,0xed,0xfb,0x7f,0x49,0x28,
+  0xfc,0x20,0xaa,0x1b,0x6c,0xc7,0x0e,0x15,0x89,0xcb,0x81,0xdf,0xf0,0x4b,0xde,0xe4,
+  0x5c,0x3d,0xd9,0xaf,0x47,0xb6,0x41,0x27,0xa8,0x37,0x3d,0x08,0xa8,0x7c,0x62,0xae];
+
+let generatedIDs = [];
+
+// ── Pad number to length ──
+function pad(val, len){
+  return String(val).padStart(len, '0').slice(-len);
+}
+
+// ── Get serial length ──
+function getSerialLen(){
+  return parseInt(document.querySelector('input[name="serialLen"]:checked').value);
+}
+
+// ── Build ID string ──
+function buildID(){
+  const range  = pad(document.getElementById('inRange').value||'00', 2);
+  const origin = pad(document.getElementById('inOrigin').value||'00', 2);
+  const series = pad(document.getElementById('inSeries').value||'120', 3);
+  const serial = pad(document.getElementById('inSerial').value||'1', getSerialLen());
+  return range + origin + series + serial;
+}
+
+// ── Update preview ──
+function updatePreview(){
+  const id = buildID();
+  const range  = id.slice(0,2);
+  const origin = id.slice(2,4);
+  const series = id.slice(4,7);
+  const serial = id.slice(7);
+  const parts = document.getElementById('idParts');
+  parts.innerHTML = `
+    <span class="id-part">${range}</span>
+    <span class="id-separator">·</span>
+    <span class="id-part">${origin}</span>
+    <span class="id-separator">·</span>
+    <span class="id-part">${series}</span>
+    <span class="id-separator">·</span>
+    <span class="id-part">${serial}</span>
+    <span class="id-separator" style="font-size:9px;color:var(--yellow)">${id.length}-digit</span>
+  `;
+}
+
+// ── Generate ID ──
+function generateID(){
+  const id = buildID();
+  const now = new Date();
+  const ts = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+
+  generatedIDs.push({ id, ts });
+  renderList();
+  showStatus(`✅ ID generated: ${id}`, 'ok');
+
+  // Auto increment serial
+  const curSerial = parseInt(document.getElementById('inSerial').value)||1;
+  document.getElementById('inSerial').value = curSerial + 1;
+  updatePreview();
+}
+
+// ── Render ID list ──
+function renderList(){
+  const list = document.getElementById('idList');
+  const count = document.getElementById('idCount');
+  count.textContent = `${generatedIDs.length} ID`;
+  document.getElementById('btnWrite').disabled = generatedIDs.length === 0;
+  document.getElementById('btnClear').disabled = generatedIDs.length === 0;
+
+  if(!generatedIDs.length){
+    list.innerHTML = '<div class="empty-state">No IDs generated yet</div>';
+    return;
+  }
+  list.innerHTML = generatedIDs.map((item,i)=>`
+    <div class="id-item">
+      <div>
+        <div class="id-item-id">${item.id}</div>
+        <div class="id-item-date">${item.ts}</div>
+      </div>
+      <div style="font-size:10px;color:var(--muted)">#${i+1}</div>
+    </div>
+  `).join('');
+}
+
+// ── XOR encode/decode ──
+function xorBytes(bytes){
+  return bytes.map(b => b ^ XOR_KEY);
+}
+
+// ── Build .bin file ──
+function buildBinFile(idStr, tsStr){
+  // ID bytes XOR-encoded
+  const idBytes = Array.from(idStr).map(c => c.charCodeAt(0) ^ XOR_KEY);
+  // Timestamp bytes XOR-encoded
+  const tsBytes = Array.from(tsStr).map(c => c.charCodeAt(0) ^ XOR_KEY);
+  // Assemble: HEADER + idBytes + SEPARATOR + tsBytes + FOOTER
+  return new Uint8Array([
+    ...HEADER_RAW,
+    ...idBytes,
+    ...SEPARATOR_RAW,
+    ...tsBytes,
+    ...FOOTER_RAW
+  ]);
+}
+
+// ── Write / Save .bin ──
+async function writeIDs(){
+  if(!generatedIDs.length) return;
+
+  try{
+    // Kalau multiple ID, simpan semua dalam satu file (tiap ID blok terpisah)
+    // Kalau single ID, simpan satu file
+    if(generatedIDs.length === 1){
+      const { id, ts } = generatedIDs[0];
+      const bytes = buildBinFile(id, ts);
+      downloadBin(bytes, 'TerminalMachineID.bin');
+      showStatus('✅ File TerminalMachineID.bin saved successfully', 'ok');
+    } else {
+      // Multiple: simpan file terpisah per ID
+      generatedIDs.forEach((item, i) => {
+        const bytes = buildBinFile(item.id, item.ts);
+        setTimeout(() => downloadBin(bytes, `TerminalMachineID_${i+1}_${item.id}.bin`), i * 300);
+      });
+      showStatus(`✅ ${generatedIDs.length} .bin files saved successfully`, 'ok');
+    }
+  } catch(e){
+    showStatus('❌ Failed to save file: ' + e.message, 'err');
+  }
+}
+
+// ── Download binary file ──
+function downloadBin(bytes, filename){
+  const blob = new Blob([bytes], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ── Read .bin file ──
+function readBin(){
+  document.getElementById('fileInput').click();
+}
+
+function handleFileRead(event){
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const bytes = new Uint8Array(e.target.result);
+      const decoded = bytes.map(b => b ^ XOR_KEY);
+
+      // Cari ID: setelah header (40 bytes), panjang 12 or 14
+      // Cari timestamp: format YYYY/MM/DD HH:MM:SS (19 karakter)
+      const text = Array.from(decoded).map(b => b >= 32 && b < 127 ? String.fromCharCode(b) : '.').join('');
+
+      // Extract ID (starting after 0x28 = 40 bytes header)
+      const idStart = 40;
+      const id12 = Array.from(decoded.slice(idStart, idStart+12)).map(b=>String.fromCharCode(b)).join('');
+      const id14 = Array.from(decoded.slice(idStart, idStart+14)).map(b=>String.fromCharCode(b)).join('');
+      const isValidID14 = /^\d{14}$/.test(id14);
+      const isValidID12 = /^\d{12}$/.test(id12);
+      const machineID = isValidID14 ? id14 : (isValidID12 ? id12 : null);
+
+      // Extract timestamp
+      const tsMatch = text.match(/\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}/);
+      const timestamp = tsMatch ? tsMatch[0] : 'Unknown';
+
+      const readContent = document.getElementById('readContent');
+      if(machineID){
+        readContent.innerHTML = `
+          <div style="text-align:center;padding:8px 0">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px;letter-spacing:1px">Machine ID</div>
+            <div class="read-id">${machineID}</div>
+            <div class="read-date">📅 Write Date: ${timestamp}</div>
+            <div style="margin-top:8px">
+              <span style="font-size:10px;color:var(--yellow);background:rgba(251,191,36,0.1);
+                border:1px solid rgba(251,191,36,0.2);padding:2px 8px;border-radius:20px">
+                ${machineID.length}-digit code
+              </span>
+            </div>
+          </div>
+        `;
+        showStatus(`✅ Successfully read ID from ${file.name}`, 'ok');
+      } else {
+        readContent.innerHTML = '<div class="empty-state">❌ Unknown file format or corrupted file</div>';
+        showStatus('❌ Cannot read ID from this file', 'err');
+      }
+    } catch(err){
+      document.getElementById('readContent').innerHTML = '<div class="empty-state">❌ Error reading file</div>';
+      showStatus('❌ Error: ' + err.message, 'err');
+    }
+    event.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── Clear list ──
+function clearList(){
+  if(!confirm('Clear all IDs from the list?')) return;
+  generatedIDs = [];
+  renderList();
+  showStatus('🗑 List cleared', 'info');
+}
+
+// ── Show status ──
+function showStatus(msg, type){
+  const el = document.getElementById('statusMsg');
+  el.innerHTML = `<div class="status status-${type}">${msg}</div>`;
+  setTimeout(()=>{ el.innerHTML=''; }, 4000);
+}
+
+// Init
+updatePreview();
+</script>
+</body>
+</html>
